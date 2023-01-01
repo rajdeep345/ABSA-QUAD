@@ -24,20 +24,35 @@ aspect_cate_list = ['location general',
 					'food style_options']
 
 
-def read_line_examples_from_file(data_path, silence=True):
+def read_line_examples_from_file(data_path, data_type, silence=True):
 	"""
-	Read data from file, each line is: sent####labels
+	Read data from two files:
+	1. data_type.sent: Contains each sentence in a separate line
+	2. data_type.tup: Contains all triplets corresponding to a sentence in a separate line
+	
 	Return List[List[word]], List[Tuple]
 	"""
 	sents, labels = [], []
-	with open(data_path, 'r', encoding='UTF-8') as fp:
-		words, labels = [], []
+	
+	with open(f'{data_path}/{data_type}.sent', 'r', encoding='UTF-8') as fp:
 		for line in fp:
 			line = line.strip()
 			if line != '':
-				words, tuples = line.split('####')
-				sents.append(words.split())
-				labels.append(eval(tuples))
+				sents.append(line.split())
+	
+	with open(f'{data_path}/{data_type}.tup', 'r', encoding='UTF-8') as fp:
+		for line in fp:
+			line = line.strip()
+			if line != '':
+				triplets = []
+				_triplets = line.split('|')
+				for t in _triplets:
+					triplet = t.split(';')
+					triplets.append(triplet)				
+				labels.append(triplets)
+
+	assert len(sents) == len(labels)
+	
 	if silence:
 		print(f"Total examples = {len(sents)}")
 	return sents, labels
@@ -48,6 +63,7 @@ def get_para_aste_targets(sents, labels):
 	for i, label in enumerate(labels):
 		all_tri_sentences = []
 		for tri in label:
+			print(tri)
 			# a is an aspect term
 			if len(tri[0]) == 1:
 				a = sents[i][tri[0][0]]
@@ -94,11 +110,11 @@ def get_para_asqp_targets(sents, labels):
 	return targets
 
 
-def get_transformed_io(data_path, data_dir, task):
+def get_transformed_io(data_path, data_type, task):
 	"""
 	The main function to transform input & target according to the task
 	"""
-	sents, labels = read_line_examples_from_file(data_path)
+	sents, labels = read_line_examples_from_file(data_path, data_type)
 
 	# the input is just the raw sentence
 	inputs = [s.copy() for s in sents]
@@ -115,8 +131,8 @@ def get_transformed_io(data_path, data_dir, task):
 
 class ABSADataset(Dataset):
 	def __init__(self, tokenizer, data_dir, data_type, task, max_len=128):
-		# './data/rest16/train.txt'
-		self.data_path = f'data/{data_dir}/{data_type}.txt'
+		# './data2/rest16/'
+		self.data_path = f'data2/{data_dir}'
 		self.task = task
 		self.max_len = max_len
 		self.tokenizer = tokenizer
@@ -142,7 +158,7 @@ class ABSADataset(Dataset):
 
 	def _build_examples(self):
 
-		inputs, targets = get_transformed_io(self.data_path, self.data_dir, self.task)
+		inputs, targets = get_transformed_io(self.data_path, self.data_type, self.task)
 
 		for i in range(len(inputs)):
 			# change input and target to two strings
