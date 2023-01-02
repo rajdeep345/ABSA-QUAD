@@ -314,7 +314,8 @@ if args.do_direct_eval:
 	# print("Reload the model")
 	# model.model.from_pretrained(args.output_dir)
 
-	sents, _ = read_line_examples_from_file(f'data/{args.dataset}', 'test', args.task)
+	data_path = f'data2/{args.dataset}' if args.task == 'aste' else f'data/{args.dataset}'
+	sents, _ = read_line_examples_from_file(data_path, 'test', args.task)
 
 	print()
 	test_dataset = ABSADataset(tokenizer=tokenizer, data_dir=args.dataset, data_type='test',
@@ -353,7 +354,8 @@ if args.do_inference:
 
 	model = T5FineTuner(args, tfm_model, tokenizer)
 
-	sents, _ = read_line_examples_from_file(f'data/{args.dataset}', 'test', args.task)
+	data_path = f'data2/{args.dataset}' if args.task == 'aste' else f'data/{args.dataset}'
+	sents, _ = read_line_examples_from_file(data_path, 'test', args.task)
 
 	print()
 	test_dataset = ABSADataset(tokenizer=tokenizer, data_dir=args.dataset, data_type='test',
