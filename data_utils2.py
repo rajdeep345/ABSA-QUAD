@@ -24,66 +24,71 @@ aspect_cate_list = ['location general',
 					'food style_options']
 
 
-def read_line_examples_from_file(data_path, data_type, silence=True):
+def read_line_examples_from_file(data_path, data_type, task):
 	"""
-	Read data from two files:
+	If the task is 'aste', then read data from two files:
 	1. data_type.sent: Contains each sentence in a separate line
 	2. data_type.tup: Contains all triplets corresponding to a sentence in a separate line
-	
+
+	If the task is 'asqp', then read data from file, each line is: sent####labels
+		
 	Return List[List[word]], List[Tuple]
 	"""
 	sents, labels = [], []
-	
-	with open(f'{data_path}/{data_type}.sent', 'r', encoding='UTF-8') as fp:
-		for line in fp:
-			line = line.strip()
-			if line != '':
-				sents.append(line.split())
-	
-	with open(f'{data_path}/{data_type}.tup', 'r', encoding='UTF-8') as fp:
-		for line in fp:
-			line = line.strip()
-			if line != '':
-				triplets = []
-				_triplets = line.split('|')
-				for t in _triplets:
-					triplet = t.split(';')
-					triplets.append(triplet)				
-				labels.append(triplets)
 
-	assert len(sents) == len(labels)
-	
-	if silence:
-		print(f"Total examples = {len(sents)}")
+	if task == 'aste':	
+		with open(f'{data_path}/{data_type}.sent', 'r', encoding='UTF-8') as fp:
+			for line in fp:
+				line = line.strip()
+				if line != '':
+					sents.append(line.split())		
+		with open(f'{data_path}/{data_type}.tup', 'r', encoding='UTF-8') as fp:
+			for line in fp:
+				line = line.strip()
+				if line != '':
+					triplets = []
+					_triplets = line.split('|')
+					for t in _triplets:
+						triplet = t.split(';')
+						triplets.append(triplet)				
+					labels.append(triplets)	
+	elif task == 'asqp':
+		with open(f'{data_path}/{data_type}.txt', 'r', encoding='UTF-8') as fp:
+			words, labels = [], []
+			for line in fp:
+				line = line.strip()
+				if line != '':
+					words, tuples = line.split('####')
+					sents.append(words.split())
+					labels.append(eval(tuples))
+
+	assert len(sents) == len(labels)	
+	print(f"Total examples = {len(sents)}")
 	return sents, labels
 
 
-def get_para_aste_targets(sents, labels):
+def get_para_aste_targets(sents, labels, target_mode):
 	targets = []
-	for i, label in enumerate(labels):
+	for label in labels:
 		all_tri_sentences = []
-		for tri in label:
-			print(tri)
-			# a is an aspect term
-			if len(tri[0]) == 1:
-				a = sents[i][tri[0][0]]
-			else:
-				start_idx, end_idx = tri[0][0], tri[0][-1]
-				a = ' '.join(sents[i][start_idx:end_idx+1])
-
-			# b is an opinion term
-			if len(tri[1]) == 1:
-				b = sents[i][tri[1][0]]
-			else:
-				start_idx, end_idx = tri[1][0], tri[1][-1]
-				b = ' '.join(sents[i][start_idx:end_idx+1])
-
-			# c is the sentiment polarity
-			c = senttag2opinion[tri[2]]           # 'POS' -> 'good'
-
-			one_tri = f"It is {c} because {a} is {b}"
+		for triplet in label:
+			at, ot, sp = [elem.strip() for elem in triplet]
+			
+			if at == 'NULL':  # for implicit aspect term
+				at = 'it'
+			
+			if target_mode == 'para':
+				sp = senttag2opinion[sp]	# 'POS' -> 'good'
+				one_tri = f"It is {sp} because {at} is {ot}"
+			
+			elif target_mode == 'temp':
+				sp = senttag2word[sp]	# 'POS' -> 'positive'
+				one_tri = f"<aspect> {at} <opinion> {ot} <sentiment> {sp}"
+			
 			all_tri_sentences.append(one_tri)
-		targets.append(' [SSEP] '.join(all_tri_sentences))
+
+		target = ' [SSEP] '.join(all_tri_sentences)
+		targets.append(target)
 	return targets
 
 
@@ -110,17 +115,17 @@ def get_para_asqp_targets(sents, labels):
 	return targets
 
 
-def get_transformed_io(data_path, data_type, task):
+def get_transformed_io(data_path, data_type, task, target_mode):
 	"""
 	The main function to transform input & target according to the task
 	"""
-	sents, labels = read_line_examples_from_file(data_path, data_type)
+	sents, labels = read_line_examples_from_file(data_path, data_type, task)
 
 	# the input is just the raw sentence
 	inputs = [s.copy() for s in sents]
 
 	if task == 'aste':
-		targets = get_para_aste_targets(sents, labels)
+		targets = get_para_aste_targets(sents, labels, target_mode)
 	elif task == 'asqp':
 		targets = get_para_asqp_targets(sents, labels)
 	else:
@@ -130,10 +135,11 @@ def get_transformed_io(data_path, data_type, task):
 
 
 class ABSADataset(Dataset):
-	def __init__(self, tokenizer, data_dir, data_type, task, max_len=128):
+	def __init__(self, tokenizer, data_dir, data_type, task, target_mode, max_len=128):
 		# './data2/rest16/'
-		self.data_path = f'data2/{data_dir}'
+		self.data_path = f'data2/{data_dir}' if task == 'aste' else f'data/{data_dir}'
 		self.task = task
+		self.target_mode = target_mode
 		self.max_len = max_len
 		self.tokenizer = tokenizer
 		self.data_dir = data_dir
@@ -158,7 +164,7 @@ class ABSADataset(Dataset):
 
 	def _build_examples(self):
 
-		inputs, targets = get_transformed_io(self.data_path, self.data_type, self.task)
+		inputs, targets = get_transformed_io(self.data_path, self.data_type, self.task, self.target_mode)
 
 		for i in range(len(inputs)):
 			# change input and target to two strings

@@ -16,8 +16,8 @@ from transformers import AdamW, T5ForConditionalGeneration, T5Tokenizer
 # from transformers import BertTokenizer, EncoderDecoderModel
 from transformers import get_linear_schedule_with_warmup
 
-from data_utils import ABSADataset
-from data_utils import read_line_examples_from_file
+from data_utils2 import ABSADataset
+from data_utils2 import read_line_examples_from_file
 from eval_utils import compute_scores
 
 
@@ -28,9 +28,11 @@ def init_args():
 	parser = argparse.ArgumentParser()
 	# basic settings
 	parser.add_argument("--task", default='asqp', type=str, required=True,
-						help="The name of the task, selected from: [asqp, tasd, aste]")
+						help="The name of the task, selected from: [aste, asqp]")
+	parser.add_argument("--target_mode", default='para', type=str, required=True,
+						help="The mode in which the target is to be framed, selected from: [para, temp]")
 	parser.add_argument("--dataset", default='rest15', type=str, required=True,
-						help="The name of the dataset, selected from: [rest15, rest16]")
+						help="The name of the dataset, selected from: [lap14, rest14, rest15, rest16]")
 	parser.add_argument("--model_name_or_path", default='t5-base', type=str,
 						help="Path to pre-trained model or shortcut name")
 	parser.add_argument("--do_train", action='store_true',
@@ -52,7 +54,7 @@ def init_args():
 	parser.add_argument('--gradient_accumulation_steps', type=int, default=1,
 						help="Number of updates steps to accumulate before performing a backward/update pass.")
 	parser.add_argument("--learning_rate", default=3e-4, type=float)
-	parser.add_argument("--num_train_epochs", default=30, type=int, 
+	parser.add_argument("--num_train_epochs", default=20, type=int, 
 						help="Total number of training epochs to perform.")
 	parser.add_argument('--seed', type=int, default=42,
 						help="random seed for initialization")
@@ -77,8 +79,8 @@ def init_args():
 
 
 def get_dataset(tokenizer, type_path, args):
-	return ABSADataset(tokenizer=tokenizer, data_dir=args.dataset, 
-					   data_type=type_path, task=args.task, max_len=args.max_seq_length)
+	return ABSADataset(tokenizer=tokenizer, data_dir=args.dataset, data_type=type_path,
+					   task=args.task, target_mode=args.target_mode, max_len=args.max_seq_length)
 
 
 class T5FineTuner(pl.LightningModule):
@@ -243,7 +245,7 @@ def evaluate(data_loader, model, sents):
 			print(f'>>Target    : {targets[i]}')
 			print(f'>>Generation: {outputs[i]}')
 		except UnicodeEncodeError:
-			print('Unable to print due to the coding error')
+			print('Unable to print due to coding error')
 	print()
 
 	scores, all_labels, all_preds = compute_scores(outputs, targets, sents)
@@ -256,14 +258,15 @@ def evaluate(data_loader, model, sents):
 
 # initialization
 args = init_args()
-print("\n", "="*30, f"NEW EXP: ASQP on {args.dataset}", "="*30, "\n")
+print("\n", "="*30, f"NEW EXP: {args.task} on {args.dataset}", "="*30, "\n")
 
 # sanity check
 # show one sample to check the code and the expected output
 tokenizer = T5Tokenizer.from_pretrained(args.model_name_or_path)
+tokenizer.add_tokens(['<aspect>', '<opinion>', '<sentiment>'], special_tokens=True)
 print(f"Here is an example (from the dev set):")
-dataset = ABSADataset(tokenizer=tokenizer, data_dir=args.dataset, 
-					  data_type='dev', max_len=args.max_seq_length)
+dataset = ABSADataset(tokenizer=tokenizer, data_dir=args.dataset, data_type='dev',
+					   task=args.task, target_mode=args.target_mode, max_len=args.max_seq_length)
 data_sample = dataset[7]  # a random data sample
 print('Input :', tokenizer.decode(data_sample['source_ids'], skip_special_tokens=True))
 print('Output:', tokenizer.decode(data_sample['target_ids'], skip_special_tokens=True))
@@ -275,6 +278,7 @@ if args.do_train:
 
 	# initialize the T5 model
 	tfm_model = T5ForConditionalGeneration.from_pretrained(args.model_name_or_path)
+	tfm_model.resize_token_embeddings(len(tokenizer))
 	model = T5FineTuner(args, tfm_model, tokenizer)
 
 	# checkpoint_callback = pl.callbacks.ModelCheckpoint(
@@ -310,11 +314,11 @@ if args.do_direct_eval:
 	# print("Reload the model")
 	# model.model.from_pretrained(args.output_dir)
 
-	sents, _ = read_line_examples_from_file(f'data/{args.dataset}/test.txt')
+	sents, _ = read_line_examples_from_file(f'data/{args.dataset}', 'test', args.task)
 
 	print()
-	test_dataset = ABSADataset(tokenizer, data_dir=args.dataset, 
-							   data_type='test', max_len=args.max_seq_length)
+	test_dataset = ABSADataset(tokenizer=tokenizer, data_dir=args.dataset, data_type='test',
+					   task=args.task, target_mode=args.target_mode, max_len=args.max_seq_length)
 	test_loader = DataLoader(test_dataset, batch_size=32, num_workers=4)
 	# print(test_loader.device)
 
@@ -349,11 +353,11 @@ if args.do_inference:
 
 	model = T5FineTuner(args, tfm_model, tokenizer)
 
-	sents, _ = read_line_examples_from_file(f'data/{args.dataset}/test.txt')
+	sents, _ = read_line_examples_from_file(f'data/{args.dataset}', 'test', args.task)
 
 	print()
-	test_dataset = ABSADataset(tokenizer, data_dir=args.dataset, 
-							   data_type='test', max_len=args.max_seq_length)
+	test_dataset = ABSADataset(tokenizer=tokenizer, data_dir=args.dataset, data_type='test',
+					   task=args.task, target_mode=args.target_mode, max_len=args.max_seq_length)
 	test_loader = DataLoader(test_dataset, batch_size=32, num_workers=4)
 	# print(test_loader.device)
 
