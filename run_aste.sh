@@ -1,4 +1,5 @@
 python main.py --task aste \
+            --target_mode para \
             --dataset rest15 \
             --model_name_or_path t5-base \
             --n_gpu 0 \

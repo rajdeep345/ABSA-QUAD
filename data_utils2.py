@@ -138,6 +138,7 @@ class ABSADataset(Dataset):
 	def __init__(self, tokenizer, data_dir, data_type, task, target_mode, max_len=128):
 		# './data2/rest16/'
 		self.data_path = f'data2/{data_dir}' if task == 'aste' else f'data/{data_dir}'
+		self.data_type = data_type
 		self.task = task
 		self.target_mode = target_mode
 		self.max_len = max_len
