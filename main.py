@@ -233,8 +233,9 @@ def evaluate(data_loader, model, sents, task, target_mode):
 									max_length=128)  # num_beams=8, early_stopping=True)
 
 		# dec = [tokenizer.decode(ids, skip_special_tokens=True) for ids in outs]
-		dec = [tokenizer.decode(ids, skip_special_tokens=True) for ids in outs]
-		target = [tokenizer.decode(ids, skip_special_tokens=True) for ids in batch["target_ids"]]
+		dec = [tokenizer.decode(ids, skip_special_tokens=False) for ids in outs]
+		# target = [tokenizer.decode(ids, skip_special_tokens=True) for ids in batch["target_ids"]]
+		target = [tokenizer.decode(ids, skip_special_tokens=False) for ids in batch["target_ids"]]
 
 		outputs.extend(dec)
 		targets.extend(target)
@@ -264,13 +265,13 @@ print("\n", "="*30, f"NEW EXP: {args.task} on {args.dataset}", "="*30, "\n")
 # sanity check
 # show one sample to check the code and the expected output
 tokenizer = T5Tokenizer.from_pretrained(args.model_name_or_path)
-tokenizer.add_tokens(['<aspect>', '<opinion>', '<sentiment>', '<triplet>'], special_tokens=False)
+tokenizer.add_tokens(['<aspect>', '<opinion>', '<sentiment>'], special_tokens=True)
 print(f"Here is an example (from the dev set):")
 dataset = ABSADataset(tokenizer=tokenizer, data_dir=args.dataset, data_type='dev',
 					   task=args.task, target_mode=args.target_mode, max_len=args.max_seq_length)
 data_sample = dataset[7]  # a random data sample
-print('Input :', tokenizer.decode(data_sample['source_ids'], skip_special_tokens=True))
-print('Output:', tokenizer.decode(data_sample['target_ids'], skip_special_tokens=True))
+print('Input :', tokenizer.decode(data_sample['source_ids'], skip_special_tokens=False))
+print('Output:', tokenizer.decode(data_sample['target_ids'], skip_special_tokens=False))
 
 
 # training process
