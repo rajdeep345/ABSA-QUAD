@@ -86,10 +86,6 @@ def compute_f1_scores(pred_pt, gold_pt):
 		n_gold += len(gold_pt[i])
 		n_pred += len(pred_pt[i])
 
-		# for t in pred_pt[i]:
-		# 	if t in gold_pt[i]:
-		# 		n_tp += 1
-
 		for t in gold_pt[i]:
 			if t in pred_pt[i]:
 				n_tp += 1

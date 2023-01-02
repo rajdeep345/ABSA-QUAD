@@ -18,7 +18,7 @@ from transformers import get_linear_schedule_with_warmup
 
 from data_utils2 import ABSADataset
 from data_utils2 import read_line_examples_from_file
-from eval_utils import compute_scores
+from eval_utils2 import compute_scores
 
 
 logger = logging.getLogger(__name__)
@@ -215,7 +215,7 @@ class LoggingCallback(pl.Callback):
 					writer.write("{} = {}\n".format(key, str(metrics[key])))
 
 
-def evaluate(data_loader, model, sents):
+def evaluate(data_loader, model, sents, task, target_mode):
 	"""
 	Compute scores given the predictions and gold labels
 	"""
@@ -248,7 +248,7 @@ def evaluate(data_loader, model, sents):
 			print('Unable to print due to coding error')
 	print()
 
-	scores, all_labels, all_preds = compute_scores(outputs, targets, sents)
+	scores, all_labels, all_preds = compute_scores(outputs, targets, sents, task, target_mode)
 	results = {'scores': scores, 'labels': all_labels, 'preds': all_preds}
 	# pickle.dump(results, open(f"{args.output_dir}/results-{args.dataset}.pickle", 'wb'))
 
@@ -323,7 +323,7 @@ if args.do_direct_eval:
 	# print(test_loader.device)
 
 	# compute the performance scores
-	scores = evaluate(test_loader, model, sents)
+	scores = evaluate(test_loader, model, sents, args.task, args.target_mode)
 
 	# write to file
 	log_file_path = f"results_log/{args.dataset}.txt"
@@ -362,7 +362,7 @@ if args.do_inference:
 	# print(test_loader.device)
 
 	# compute the performance scores
-	scores = evaluate(test_loader, model, sents)
+	scores = evaluate(test_loader, model, sents, agrs.task, args.target_mode)
 
 	# write to file
 	log_file_path = f"results_log/{args.dataset}.txt"
