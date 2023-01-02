@@ -264,7 +264,7 @@ print("\n", "="*30, f"NEW EXP: {args.task} on {args.dataset}", "="*30, "\n")
 # sanity check
 # show one sample to check the code and the expected output
 tokenizer = T5Tokenizer.from_pretrained(args.model_name_or_path)
-tokenizer.add_tokens(['<aspect>', '<opinion>', '<sentiment>', '<triplet>'], special_tokens=True)
+tokenizer.add_tokens(['<aspect>', '<opinion>', '<sentiment>', '<triplet>'], special_tokens=False)
 print(f"Here is an example (from the dev set):")
 dataset = ABSADataset(tokenizer=tokenizer, data_dir=args.dataset, data_type='dev',
 					   task=args.task, target_mode=args.target_mode, max_len=args.max_seq_length)
