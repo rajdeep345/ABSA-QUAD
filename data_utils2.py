@@ -83,7 +83,7 @@ def get_para_aste_targets(sents, labels, target_mode):
 			
 			elif target_mode == 'temp':
 				sp = senttag2word[sp]	# 'POS' -> 'positive'
-				one_tri = f"<aspect> {at} <opinion> {ot} <sentiment> {sp}"
+				one_tri = f"[ASPECT] {at} [OPINION] {ot} [SENTIMENT] {sp}"
 			
 			all_tri_sentences.append(one_tri)
 

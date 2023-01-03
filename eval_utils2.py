@@ -3,7 +3,7 @@
 # This script handles the decoding functions and performance measurement
 
 import re
-from data_utils import aspect_cate_list
+from data_utils2 import aspect_cate_list
 
 sentiment_word_list = ['positive', 'negative', 'neutral']
 opinion2word = {'great': 'positive', 'bad': 'negative', 'ok': 'neutral'}
@@ -27,11 +27,11 @@ def extract_spans_para(task, target_mode, seq, seq_type):
 				tuples.append((at, ot, sp))
 		elif target_mode == 'temp':
 			for s in sents:
-				# <aspect> It/pizza <opinion> over cooked <sentiment> negative
+				# [ASPECT] It/pizza [OPINION] over cooked [SENTIMENT] negative
 				try:
-					at = s.split('<opinion>')[0].split('<aspect>')[1].strip()
-					ot = s.split('<opinion>')[1].split('<sentiment>')[0].strip()
-					sp = s.split('<sentiment>')[1].strip()
+					at = s.split('[OPINION]')[0].split('[ASPECT]')[1].strip()
+					ot = s.split('[OPINION]')[1].split('[SENTIMENT]')[0].strip()
+					sp = s.split('[SENTIMENT]')[1].strip()
 				except ValueError:
 					# print(f'In {seq_type} seq, cannot decode: {s}')
 					at, ot, sp = '', '', ''
