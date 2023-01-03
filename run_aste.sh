@@ -1,5 +1,5 @@
 python main.py --task aste \
-            --target_mode para \
+            --target_mode temp \
             --dataset rest15 \
             --model_name_or_path t5-base \
             --n_gpu 0 \
@@ -9,4 +9,4 @@ python main.py --task aste \
             --gradient_accumulation_steps 1 \
             --eval_batch_size 16 \
             --learning_rate 3e-4 \
-            --num_train_epochs 20
+            --num_train_epochs 4
