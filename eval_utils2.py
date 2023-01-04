@@ -27,11 +27,11 @@ def extract_spans_para(task, target_mode, seq, seq_type):
 				tuples.append((at, ot, sp))
 		elif target_mode == 'temp':
 			for s in sents:
-				# [ASPECT] It/pizza [OPINION] over cooked [SENTIMENT] negative
-				if '[ASPECT]' in s and '[OPINION]' in s and '[SENTIMENT]' in s:
-					at = s.split('[OPINION]')[0].split('[ASPECT]')[1].strip()
-					ot = s.split('[OPINION]')[1].split('[SENTIMENT]')[0].strip()
-					sp = s.split('[SENTIMENT]')[1].strip()
+				# <aspect> It/pizza <opinion> over cooked <sentiment> negative
+				if '<aspect>' in s and '<opinion>' in s and '<sentiment>' in s:
+					at = s.split('<opinion>')[0].split('<aspect>')[1].strip()
+					ot = s.split('<opinion>')[1].split('<sentiment>')[0].strip()
+					sp = s.split('<sentiment>')[1].strip()
 				else:
 					print(f'Cannot decode: {s}')
 					at, ot, sp = '', '', ''
