@@ -9,4 +9,4 @@ python main.py --task aste \
             --gradient_accumulation_steps 1 \
             --eval_batch_size 16 \
             --learning_rate 3e-4 \
-            --num_train_epochs 4
+            --num_train_epochs 2
