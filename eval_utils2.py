@@ -33,7 +33,7 @@ def extract_spans_para(task, target_mode, seq, seq_type):
 					ot = s.split('[OPINION]')[1].split('[SENTIMENT]')[0].strip()
 					sp = s.split('[SENTIMENT]')[1].strip()
 				except ValueError:
-					# print(f'In {seq_type} seq, cannot decode: {s}')
+					print(f'In {seq_type} seq, cannot decode: {s}')
 					at, ot, sp = '', '', ''
 				tuples.append((at, ot, sp))
 	elif task == 'asqp':
