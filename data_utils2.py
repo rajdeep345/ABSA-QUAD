@@ -93,9 +93,9 @@ def get_para_aste_targets(sents, labels, target_mode):
 	return targets
 
 
-def get_para_asqp_targets(sents, labels):
+def get_para_asqp_targets(sents, labels, target_mode):
 	"""
-	Obtain the target sentence under the paraphrase paradigm
+	Obtain the target sentence under the "target_mode"" paradigm
 	"""
 	targets = []
 	for label in labels:
@@ -103,12 +103,16 @@ def get_para_asqp_targets(sents, labels):
 		for quad in label:
 			at, ac, sp, ot = quad
 
-			man_ot = sentword2opinion[sp]  # 'POS' -> 'good'    
-
 			if at == 'NULL':  # for implicit aspect term
 				at = 'it'
 
-			one_quad_sentence = f"{ac} is {man_ot} because {at} is {ot}"
+			if target_mode == 'para':
+				man_ot = sentword2opinion[sp]  # 'positive': 'great'
+				one_quad_sentence = f"{ac} is {man_ot} because {at} is {ot}"
+
+			elif target_mode == 'temp':
+				one_quad_sentence = f"<aspect> {at} <category> {ac} <opinion> {ot} <sentiment> {sp}"
+
 			all_quad_sentences.append(one_quad_sentence)
 
 		target = ' [SSEP] '.join(all_quad_sentences)
@@ -128,7 +132,7 @@ def get_transformed_io(data_path, data_type, task, target_mode):
 	if task == 'aste':
 		targets = get_para_aste_targets(sents, labels, target_mode)
 	elif task == 'asqp':
-		targets = get_para_asqp_targets(sents, labels)
+		targets = get_para_asqp_targets(sents, labels, target_mode)
 	else:
 		raise NotImplementedError
 

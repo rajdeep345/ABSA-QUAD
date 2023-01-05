@@ -37,26 +37,38 @@ def extract_spans_para(task, target_mode, seq, seq_type):
 					at, ot, sp = '', '', ''
 				tuples.append((at, ot, sp))
 	elif task == 'asqp':
-		for s in sents:
-			# food quality is bad because pizza is over cooked.
-			try:
-				ac_sp, at_ot = s.split(' because ')
-				ac, sp = ac_sp.split(' is ')
-				at, ot = at_ot.split(' is ')
-
-				# if the aspect term is implicit
-				if at.lower() == 'it':
-					at = 'NULL'
-			except ValueError:
+		if target_mode == 'para':
+			for s in sents:
+				# food quality is bad because pizza is over cooked.
 				try:
-					# print(f'In {seq_type} seq, cannot decode: {s}')
-					pass
-				except UnicodeEncodeError:
-					# print(f'In {seq_type} seq, a string cannot be decoded')
-					pass
-				ac, at, sp, ot = '', '', '', ''
+					ac_sp, at_ot = s.split(' because ')
+					ac, sp = ac_sp.split(' is ')
+					at, ot = at_ot.split(' is ')
 
-			tuples.append((ac, at, sp, ot))
+					# if the aspect term is implicit
+					if at.lower() == 'it':
+						at = 'NULL'
+				except ValueError:
+					try:
+						# print(f'In {seq_type} seq, cannot decode: {s}')
+						pass
+					except UnicodeEncodeError:
+						# print(f'In {seq_type} seq, a string cannot be decoded')
+						pass
+					ac, at, sp, ot = '', '', '', ''
+				tuples.append((ac, at, sp, ot))
+		elif target_mode == 'temp':
+			for s in sents:
+				# <aspect> It/pizza <category> food quality <opinion> over cooked <sentiment> negative
+				if '<aspect>' in s and '<category>' in s and '<opinion>' in s and '<sentiment>' in s:
+					at = s.split('<category>')[0].split('<aspect>')[1].strip()
+					ac = s.split('<category>')[1].split('<opinion>')[0].strip()
+					ot = s.split('<opinion>')[1].split('<sentiment>')[0].strip()
+					sp = s.split('<sentiment>')[1].strip()
+				else:
+					print(f'Cannot decode: {s}')
+					ac, at, sp, ot = '', '', '', ''
+				tuples.append((ac, at, sp, ot))
 	else:
 		raise NotImplementedError
 	return tuples
