@@ -23,6 +23,14 @@ from eval_utils2 import compute_scores
 
 logger = logging.getLogger(__name__)
 
+def custom_print(*msg):
+	for i in range(0, len(msg)):
+		if i == len(msg) - 1:
+			print(msg[i])
+			custom_logger.write(str(msg[i]) + '\n')
+		else:
+			print(msg[i], ' ', end='')
+			custom_logger.write(str(msg[i]))
 
 def init_args():
 	parser = argparse.ArgumentParser()
@@ -116,6 +124,7 @@ class T5FineTuner(pl.LightningModule):
 			labels=lm_labels,
 			decoder_attention_mask=batch['target_mask']
 		)
+		print(outputs)
 
 		loss = outputs[0]
 		return loss
