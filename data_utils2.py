@@ -52,7 +52,7 @@ def read_line_examples_from_file(data_path, data_type, task):
 						triplet = t.split(';')
 						triplets.append(triplet)				
 					labels.append(triplets)	
-	elif task == 'asqp':
+	elif task == 'asqp' or task == 'acos':
 		with open(f'{data_path}/{data_type}.txt', 'r', encoding='UTF-8') as fp:
 			words, labels = [], []
 			for line in fp:
@@ -76,6 +76,8 @@ def get_para_aste_targets(sents, labels, target_mode):
 			
 			if at == 'NULL':  # for implicit aspect term
 				at = 'it'
+			if ot == 'NULL':  # for implicit opinion term
+				ot = 'implied'
 			
 			if target_mode == 'para':
 				sp = senttag2opinion[sp]	# 'POS' -> 'good'
@@ -104,13 +106,16 @@ def get_para_asqp_targets(sents, labels, target_mode):
 			at, ac, sp, ot = quad
 
 			if at == 'NULL':  # for implicit aspect term
-				at = 'it'
+				at = 'it'			
 
 			if target_mode == 'para':
 				man_ot = sentword2opinion[sp]  # 'positive': 'great'
 				one_quad_sentence = f"{ac} is {man_ot} because {at} is {ot}"
 
 			elif target_mode == 'temp':
+				# added here because this is not a contribution by PARAPHRASE paper.
+				if ot == 'NULL':  # for implicit opinion term
+					ot = 'implied'
 				one_quad_sentence = f"<aspect> {at} <category> {ac} <opinion> {ot} <sentiment> {sp}"
 
 			all_quad_sentences.append(one_quad_sentence)
@@ -131,7 +136,7 @@ def get_transformed_io(data_path, data_type, task, target_mode):
 
 	if task == 'aste':
 		targets = get_para_aste_targets(sents, labels, target_mode)
-	elif task == 'asqp':
+	elif task == 'asqp' or task == 'acos':
 		targets = get_para_asqp_targets(sents, labels, target_mode)
 	else:
 		raise NotImplementedError
@@ -141,8 +146,7 @@ def get_transformed_io(data_path, data_type, task, target_mode):
 
 class ABSADataset(Dataset):
 	def __init__(self, tokenizer, data_dir, data_type, task, target_mode, max_len=128):
-		# './data2/rest16/'
-		self.data_path = f'data2/{data_dir}' if task == 'aste' else f'data/{data_dir}'
+		self.data_path = f'data_{task}/{data_dir}'
 		self.data_type = data_type
 		self.task = task
 		self.target_mode = target_mode

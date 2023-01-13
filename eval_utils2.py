@@ -20,7 +20,7 @@ def extract_spans_para(task, target_mode, seq, seq_type):
 				try:
 					sp, atot = s.split(' because ')
 					sp = opinion2word.get(sp[6:], 'nope')    # 'good' -> 'positive'
-					at, ot = atot.split(' is ')
+					at, ot = atot.split(' is ')					
 				except ValueError:
 					# print(f'In {seq_type} seq, cannot decode: {s}')
 					at, ot, sp = '', '', ''
@@ -32,11 +32,17 @@ def extract_spans_para(task, target_mode, seq, seq_type):
 					at = s.split('<opinion>')[0].split('<aspect>')[1].strip()
 					ot = s.split('<opinion>')[1].split('<sentiment>')[0].strip()
 					sp = s.split('<sentiment>')[1].strip()
+					# if the aspect term is implicit
+					if at.lower() == 'it':
+						at = 'NULL'
+					# if the opinion term is implicit
+					if ot.lower() == 'implied':
+						ot = 'NULL'
 				else:
 					print(f'Cannot decode: {s}')
 					at, ot, sp = '', '', ''
 				tuples.append((at, ot, sp))
-	elif task == 'asqp':
+	elif task == 'asqp' or task == 'acos':
 		if target_mode == 'para':
 			for s in sents:
 				# food quality is bad because pizza is over cooked.
@@ -65,6 +71,12 @@ def extract_spans_para(task, target_mode, seq, seq_type):
 					ac = s.split('<category>')[1].split('<opinion>')[0].strip()
 					ot = s.split('<opinion>')[1].split('<sentiment>')[0].strip()
 					sp = s.split('<sentiment>')[1].strip()
+					# if the aspect term is implicit
+					if at.lower() == 'it':
+						at = 'NULL'
+					# if the opinion term is implicit
+					if ot.lower() == 'implied':
+						ot = 'NULL'
 				else:
 					print(f'Cannot decode: {s}')
 					ac, at, sp, ot = '', '', '', ''

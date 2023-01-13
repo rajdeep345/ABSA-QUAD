@@ -1,0 +1,13 @@
+ambience general
+drinks prices
+drinks quality
+drinks style_options
+food general
+food prices
+food quality
+food style_options
+location general
+restaurant general
+restaurant miscellaneous
+restaurant prices
+service general

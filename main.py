@@ -23,24 +23,16 @@ from eval_utils2 import compute_scores
 
 logger = logging.getLogger(__name__)
 
-def custom_print(*msg):
-	for i in range(0, len(msg)):
-		if i == len(msg) - 1:
-			print(msg[i])
-			custom_logger.write(str(msg[i]) + '\n')
-		else:
-			print(msg[i], ' ', end='')
-			custom_logger.write(str(msg[i]))
 
 def init_args():
 	parser = argparse.ArgumentParser()
 	# basic settings
 	parser.add_argument("--task", default='asqp', type=str, required=True,
-						help="The name of the task, selected from: [aste, asqp]")
+						help="The name of the task, selected from: [aste, asqp, acos]")
 	parser.add_argument("--target_mode", default='para', type=str, required=True,
 						help="The mode in which the target is to be framed, selected from: [para, temp]")
 	parser.add_argument("--dataset", default='rest15', type=str, required=True,
-						help="The name of the dataset, selected from: [lap14, rest14, rest15, rest16]")
+						help="The name of the dataset, selected from: [lap14, rest14, rest15, rest16, laptop, rest]")
 	parser.add_argument("--model_name_or_path", default='t5-base', type=str,
 						help="Path to pre-trained model or shortcut name")
 	parser.add_argument("--do_train", action='store_true',
@@ -124,7 +116,7 @@ class T5FineTuner(pl.LightningModule):
 			labels=lm_labels,
 			decoder_attention_mask=batch['target_mask']
 		)
-		print(outputs)
+		# print(outputs)
 
 		loss = outputs[0]
 		return loss
@@ -242,10 +234,8 @@ def evaluate(data_loader, model, sents, task, target_mode):
 									max_length=128)  # num_beams=8, early_stopping=True)
 
 		dec = [tokenizer.decode(ids, skip_special_tokens=True) for ids in outs]
-		# dec = [tokenizer.decode(ids, skip_special_tokens=False) for ids in outs]
 		target = [tokenizer.decode(ids, skip_special_tokens=True) for ids in batch["target_ids"]]
-		# target = [tokenizer.decode(ids, skip_special_tokens=False) for ids in batch["target_ids"]]
-
+		
 		outputs.extend(dec)
 		targets.extend(target)
 
@@ -274,11 +264,12 @@ print("\n", "="*30, f"NEW EXP: {args.task} on {args.dataset}", "="*30, "\n")
 # sanity check
 # show one sample to check the code and the expected output
 tokenizer = T5Tokenizer.from_pretrained(args.model_name_or_path)
-tokenizer.add_tokens(['<aspect>', '<category>', '<opinion>', '<sentiment>'], special_tokens=True)
+if args.target_mode == 'temp':
+	tokenizer.add_tokens(['<aspect>', '<category>', '<opinion>', '<sentiment>'], special_tokens=True)
 print(f"Here is an example (from the dev set):")
 dataset = ABSADataset(tokenizer=tokenizer, data_dir=args.dataset, data_type='dev',
 					   task=args.task, target_mode=args.target_mode, max_len=args.max_seq_length)
-data_sample = dataset[7]  # a random data sample
+data_sample = dataset[10]  # a random data sample
 print('Input :', tokenizer.decode(data_sample['source_ids'], skip_special_tokens=False))
 print('Output:', tokenizer.decode(data_sample['target_ids'], skip_special_tokens=False))
 
@@ -289,7 +280,8 @@ if args.do_train:
 
 	# initialize the T5 model
 	tfm_model = T5ForConditionalGeneration.from_pretrained(args.model_name_or_path)
-	tfm_model.resize_token_embeddings(len(tokenizer))
+	if args.target_mode == 'temp':
+		tfm_model.resize_token_embeddings(len(tokenizer))
 	model = T5FineTuner(args, tfm_model, tokenizer)
 
 	# checkpoint_callback = pl.callbacks.ModelCheckpoint(
@@ -325,7 +317,7 @@ if args.do_direct_eval:
 	# print("Reload the model")
 	# model.model.from_pretrained(args.output_dir)
 
-	data_path = f'data2/{args.dataset}' if args.task == 'aste' else f'data/{args.dataset}'
+	data_path = f'data_{args.task}/{args.dataset}'
 	sents, _ = read_line_examples_from_file(data_path, 'test', args.task)
 
 	print()
@@ -365,7 +357,7 @@ if args.do_inference:
 
 	model = T5FineTuner(args, tfm_model, tokenizer)
 
-	data_path = f'data2/{args.dataset}' if args.task == 'aste' else f'data/{args.dataset}'
+	data_path = f'data_{args.task}/{args.dataset}'
 	sents, _ = read_line_examples_from_file(data_path, 'test', args.task)
 
 	print()
