@@ -24,6 +24,16 @@ from eval_utils2 import compute_scores
 logger = logging.getLogger(__name__)
 
 
+def custom_print(*msg):
+	for i in range(0, len(msg)):
+		if i == len(msg) - 1:
+			print(msg[i])
+			custom_logger.write(str(msg[i]) + '\n')
+		else:
+			print(msg[i], ' ', end='')
+			custom_logger.write(str(msg[i]))
+
+
 def init_args():
 	parser = argparse.ArgumentParser()
 	# basic settings
@@ -59,6 +69,15 @@ def init_args():
 	parser.add_argument('--seed', type=int, default=42,
 						help="random seed for initialization")
 
+	# multi-task details
+	parser.add_argument("--use_tagger", default = False, type = bool) 
+	parser.add_argument("--use_reg", default = False, type = bool)
+	parser.add_argument("--alpha", default=1.0, type=float)
+	parser.add_argument("--beta", default=0.2, type=float)
+
+	# k-shot experimentation
+	parser.add_argument('--k_shot', default=False, type=bool, help="whether to perform low-resource k-shot experiments")
+
 	# training details
 	parser.add_argument("--weight_decay", default=0.0, type=float)
 	parser.add_argument("--adam_epsilon", default=1e-8, type=float)
@@ -70,7 +89,11 @@ def init_args():
 	if not os.path.exists('./outputs'):
 		os.mkdir('./outputs')
 
-	output_dir = f"outputs/{args.dataset}"
+	task_dir = f"./outputs/{args.task}"
+	if not os.path.exists(task_dir):
+		os.mkdir(task_dir)
+
+	output_dir = f"{task_dir}/{args.dataset}"
 	if not os.path.exists(output_dir):
 		os.mkdir(output_dir)
 	args.output_dir = output_dir
@@ -82,6 +105,10 @@ def get_dataset(tokenizer, type_path, args):
 	return ABSADataset(tokenizer=tokenizer, data_dir=args.dataset, data_type=type_path,
 					   task=args.task, target_mode=args.target_mode, max_len=args.max_seq_length)
 
+def load_model_weights(model, new_checkpoint):
+	model.load_state_dict(torch.load(new_checkpoint))
+	model.train() 
+	return model
 
 class T5FineTuner(pl.LightningModule):
 	"""
@@ -92,6 +119,24 @@ class T5FineTuner(pl.LightningModule):
 		self.hparams = hparams
 		self.model = tfm_model
 		self.tokenizer = tokenizer
+
+		if args.use_tagger:
+			### Tagger
+			self.classifier = nn.Linear(768, 3)  ## 3 labels, B, I, and O.
+			self.softmax = nn.Softmax(dim=2)
+			self.tag_criterion = nn.CrossEntropyLoss(ignore_index=-100)
+			self.token_dropout = nn.Dropout(0.1)
+			self.alpha = args.alpha
+
+		if args.use_reg:
+			### Regressor
+			self.regressor_layer = nn.Linear(768, 128)
+			self.relu1 = nn.ReLU()
+			self.ff1 = nn.Linear(128, 64)
+			self.tanh1 = nn.Tanh()
+			self.ff2 = nn.Linear(64, 1)
+			self.regressor_criterion = nn.MSELoss()
+			self.beta = args.beta
 
 	def is_logger(self):
 		return True
@@ -119,11 +164,87 @@ class T5FineTuner(pl.LightningModule):
 		# print(outputs)
 
 		loss = outputs[0]
+		# print(loss, "loss before tagger")
+
+		if args.use_tagger:
+			encoder_states = outputs.encoder_last_hidden_state
+			logits = self.classifier(self.token_dropout(encoder_states))			
+			tag_loss = self.tag_criterion(logits.view(-1, 3), batch['op_tags'].view(-1))		
+			loss += self.alpha * tag_loss
+			# print(loss, "loss after tagger")
+
+		if args.regressor:
+			encoder_states = outputs.encoder_last_hidden_state
+			mask_position = torch.tensor(np.where(batch["source_ids"].cpu().numpy() == 1, 1, 0)).to(device)
+			print(sum(mask_position))
+			masked_embeddings = encoder_states * mask_position.unsqueeze(2)
+			sentence_embedding = torch.sum(masked_embeddings, axis=1)
+			normalized_sentence_embeddings = sentence_embedding
+
+			outs = self.regressor_layer(self.token_dropout(normalized_sentence_embeddings))
+			outs = self.relu1(outs)
+			outs = self.ff1(outs)
+			outs = self.tanh1(outs)
+			outs = self.ff2(outs)
+
+			regressor_loss = self.regressor_criterion(outs, batch['triplet_count'].view(-1).type_as(outs))
+			loss += self.beta * regressor_loss
+			# print(loss, "loss after regression")
+
 		return loss
+
+	def _generate(self, batch):
+
+		"""
+		Compute scores given the predictions and gold labels
+		"""
+		device = torch.device(f'cuda:{args.n_gpu}')
+		model.model.to(device)
+
+		model.model.eval()
+
+		outputs, targets = [], []
+
+		for batch in tqdm(data_loader):
+			# need to push the data to device
+			outs = model.model.generate(input_ids=batch['source_ids'].to(device), 
+										attention_mask=batch['source_mask'].to(device), 
+										max_length=128)  # num_beams=8, early_stopping=True)
+
+			dec = [tokenizer.decode(ids, skip_special_tokens=True) for ids in outs]
+			target = [tokenizer.decode(ids, skip_special_tokens=True) for ids in batch["target_ids"]]
+			
+			outputs.extend(dec)
+			targets.extend(target)
+
+		outs = self.model.generate(input_ids=batch['source_ids'], 
+							attention_mask=batch['source_mask'], 
+							max_length=128)
+		outputs = []
+		targets = []
+		#print(outs)
+		for i in range(len(outs)):
+
+			dec = tokenizer.decode(outs[i], skip_special_tokens=False)
+			labels = np.where(batch["target_ids"][i].cpu().numpy() != -100, batch["target_ids"][i].cpu().numpy(), tokenizer.pad_token_id)
+			target = tokenizer.decode(torch.tensor(labels), skip_special_tokens=False)
+
+			outputs.append(dec)
+			targets.append(target)
+
+		decoded_labels = correct_spaces(targets)
+		decoded_preds = correct_spaces(outputs)
+		# print('decoded_preds', decoded_preds)
+		# print('decoded_labels', decoded_labels)
+
+		linearized_triplets = {}
+		linearized_triplets['predictions'] = decoded_preds
+		linearized_triplets['labels'] = decoded_labels
+
+		return linearized_triplets
 
 	def training_step(self, batch, batch_idx):
 		loss = self._step(batch)
-
 		tensorboard_logs = {"train_loss": loss}
 		return {"loss": loss, "log": tensorboard_logs}
 
