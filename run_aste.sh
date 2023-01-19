@@ -39,7 +39,7 @@ python main.py --task aste \
 
 python main.py --task aste \
             --target_mode temp \
-            --dataset lap15 \
+            --dataset lap14 \
             --model_name_or_path t5-base \
             --n_gpu 0 \
             --do_train \
@@ -93,7 +93,7 @@ python main.py --task aste \
 
 python main.py --task aste \
             --target_mode para \
-            --dataset lap15 \
+            --dataset lap14 \
             --model_name_or_path t5-base \
             --n_gpu 0 \
             --do_train \
