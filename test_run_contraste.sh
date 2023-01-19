@@ -1,7 +1,7 @@
 python main_ckpt1.py --task aste \
             --target_mode temp \
             --dataset rest14 \
-            --model_name_or_path t5-base \
+            --model_name_or_path models/contraste_model_after_8_epochs \
             --n_gpu 0 \
             --do_train \
             --do_direct_eval \
