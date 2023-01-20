@@ -396,7 +396,7 @@ print('Output:', tokenizer.decode(data_sample['target_ids'], skip_special_tokens
 
 
 # training process
-if args.do_train:
+if args.do_train:	
 	print("\n****** Conduct Training ******")
 
 	# initialize the T5 model

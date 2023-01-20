@@ -24,6 +24,15 @@ from eval_utils2 import compute_scores
 logger = logging.getLogger(__name__)
 
 
+def custom_print(*msg, custom_logger):
+	for i in range(0, len(msg)):
+		if i == len(msg) - 1:
+			print(msg[i])
+			custom_logger.write(str(msg[i]) + '\n')
+		else:
+			print(msg[i], ' ', end='')
+			custom_logger.write(str(msg[i]))
+
 def init_args():
 	parser = argparse.ArgumentParser()
 	# basic settings
@@ -276,6 +285,12 @@ print('Output:', tokenizer.decode(data_sample['target_ids'], skip_special_tokens
 
 # training process
 if args.do_train:
+	# results_file = f'{args.dataset}_{args.target_mode}'
+	# if args.model_name_or_path == 't5-base':
+	# 	results_file += '_aste.txt'
+	# else:
+	# 	results_file += f'_contraste_epoch_{model_name_or_path.strip().split('_')[-2]}.txt'
+	# custom_logger = open(os.path.join('results', results_file), 'w')
 	print("\n****** Conduct Training ******")
 
 	# initialize the T5 model
