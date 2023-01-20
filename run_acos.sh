@@ -9,7 +9,7 @@ python main.py --task acos \
             --gradient_accumulation_steps 1 \
             --eval_batch_size 16 \
             --learning_rate 3e-4 \
-            --num_train_epochs 20
+            --num_train_epochs 20 > rest_acos_para.txt \
 
 python main.py --task acos \
             --target_mode temp \
@@ -22,7 +22,7 @@ python main.py --task acos \
             --gradient_accumulation_steps 1 \
             --eval_batch_size 16 \
             --learning_rate 3e-4 \
-            --num_train_epochs 20
+            --num_train_epochs 20 > rest_acos.txt
 
 python main.py --task acos \
             --target_mode para \
@@ -35,7 +35,7 @@ python main.py --task acos \
             --gradient_accumulation_steps 1 \
             --eval_batch_size 16 \
             --learning_rate 3e-4 \
-            --num_train_epochs 20
+            --num_train_epochs 20 > lap_acos_para.txt
 
 python main.py --task acos \
             --target_mode temp \
@@ -48,4 +48,4 @@ python main.py --task acos \
             --gradient_accumulation_steps 1 \
             --eval_batch_size 16 \
             --learning_rate 3e-4 \
-            --num_train_epochs 20
+            --num_train_epochs 20 > lap_acos.txt
