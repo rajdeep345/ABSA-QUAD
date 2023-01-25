@@ -249,11 +249,13 @@ def evaluate(data_loader, model, sents, task, target_mode):
 		targets.extend(target)
 
 	
-	print("\nPrint some results to check the sanity of generation method:", '\n', '-'*30)
-	for i in [1, 5, 25, 42, 50]:
+	# print("\nPrint some results to check the sanity of generation method:", '\n', '-'*30)
+	print("\nTest Results:", '\n', '-'*30)
+	# for i in [1, 5, 25, 42, 50]:
+	for i in range(len(targets)):
 		try:
 			print(f'>>Target    : {targets[i]}')
-			print(f'>>Generation: {outputs[i]}')
+			print(f'>>Generation: {outputs[i]}\n')
 		except UnicodeEncodeError:
 			print('Unable to print due to coding error')
 	print()
