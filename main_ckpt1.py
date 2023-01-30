@@ -37,7 +37,7 @@ def init_args():
 	parser = argparse.ArgumentParser()
 	# basic settings
 	parser.add_argument("--task", default='asqp', type=str, required=True,
-						help="The name of the task, selected from: [aste, asqp, acos]")
+						help="The name of the task, selected from: [aste, asqp, acos, caves]")
 	parser.add_argument("--target_mode", default='para', type=str, required=True,
 						help="The mode in which the target is to be framed, selected from: [para, temp]")
 	parser.add_argument("--dataset", default='rest15', type=str, required=True,
