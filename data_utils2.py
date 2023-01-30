@@ -3,6 +3,7 @@
 # This script contains all data transformation and reading
 
 import random
+import json
 from torch.utils.data import Dataset
 
 senttag2word = {'POS': 'positive', 'NEG': 'negative', 'NEU': 'neutral'}
