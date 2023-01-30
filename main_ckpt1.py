@@ -334,7 +334,7 @@ if args.do_direct_eval:
 	# print("Reload the model")
 	# model.model.from_pretrained(args.output_dir)
 
-	data_path = f'data_{args.task}/{args.dataset}'
+	data_path = f'data_{args.task}' if args.task == 'caves' else f'data_{args.task}/{args.dataset}'
 	sents, _ = read_line_examples_from_file(data_path, 'test', args.task)
 
 	print()
@@ -374,7 +374,7 @@ if args.do_inference:
 
 	model = T5FineTuner(args, tfm_model, tokenizer)
 
-	data_path = f'data_{args.task}/{args.dataset}'
+	data_path = f'data_{args.task}' if args.task == 'caves' else f'data_{args.task}/{args.dataset}'
 	sents, _ = read_line_examples_from_file(data_path, 'test', args.task)
 
 	print()

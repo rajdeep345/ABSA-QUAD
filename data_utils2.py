@@ -61,10 +61,40 @@ def read_line_examples_from_file(data_path, data_type, task):
 					words, tuples = line.split('####')
 					sents.append(words.split())
 					labels.append(eval(tuples))
+	elif task == 'caves':
+		with open(f'{data_path}/{data_type}.json') as fp:
+			lines = json.load(fp)
+			for line in enumerate(lines):
+				_, values = line
+				sents.append(values['tweet'].strip().split())
+				tuples = []
+				for k,v in values['labels'].items():
+					tuples.append([k, v[0]['terms'].strip()])
+				labels.append(tuples)
 
 	assert len(sents) == len(labels)	
 	print(f"Total examples = {len(sents)}")
 	return sents, labels
+
+
+def get_para_caves_targets(sents, labels, target_mode):
+	targets = []
+	for label in labels:
+		all_target_sentences = []
+		for _tuple in label:
+			reason, explanation = [elem.strip() for elem in _tuple]
+
+			if target_mode == 'para':
+				if reason == 'none':  # if no specific anti-vax concern is mentioned
+					sent = "reason for not taking vaccine is not mentioned explicitly"
+				else:
+					sent = f"reason for not taking vaccine is {reason} because {explanation}"
+			
+			all_target_sentences.append(sent)
+
+		target = ' [SSEP] '.join(all_target_sentences)
+		targets.append(target)
+	return targets
 
 
 def get_para_aste_targets(sents, labels, target_mode):
@@ -138,6 +168,8 @@ def get_transformed_io(data_path, data_type, task, target_mode):
 		targets = get_para_aste_targets(sents, labels, target_mode)
 	elif task == 'asqp' or task == 'acos':
 		targets = get_para_asqp_targets(sents, labels, target_mode)
+	elif task == 'caves':
+		targets = get_para_caves_targets(sents, labels, target_mode)
 	else:
 		raise NotImplementedError
 
@@ -146,7 +178,7 @@ def get_transformed_io(data_path, data_type, task, target_mode):
 
 class ABSADataset(Dataset):
 	def __init__(self, tokenizer, data_dir, data_type, task, target_mode, max_len=128):
-		self.data_path = f'data_{task}/{data_dir}'
+		self.data_path = f'data_{task}' if task == 'caves' else f'data_{task}/{data_dir}'
 		self.data_type = data_type
 		self.task = task
 		self.target_mode = target_mode

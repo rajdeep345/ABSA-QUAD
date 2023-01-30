@@ -1,6 +1,6 @@
-python main_ckpt1.py --task aste \
-            --target_mode temp \
-            --dataset rest14 \
+python main_ckpt1.py --task caves \
+            --target_mode para \
+            --dataset caves \
             --model_name_or_path t5-base \
             --n_gpu 0 \
             --do_train \

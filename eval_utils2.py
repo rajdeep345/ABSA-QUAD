@@ -81,6 +81,21 @@ def extract_spans_para(task, target_mode, seq, seq_type):
 					print(f'Cannot decode: {s}')
 					ac, at, sp, ot = '', '', '', ''
 				tuples.append((ac, at, sp, ot))
+
+	elif task == 'caves':
+		if target_mode == 'para':
+			for s in sents:
+				# reason for not taking vaccine is {unnecessary} because {Covid cases are mild/assymptomatic}
+				if s.startswith('reason for not taking vaccine is'):
+					reason = s.strip().split()[6]
+					if reason == 'none':
+						expln = ''
+					else:
+						expln = ' '.join(s.strip().split()[8:])			
+				else:
+					print(f'Cannot decode: {s}')
+					reason, expln = '', ''
+				tuples.append((reason, expln))
 	else:
 		raise NotImplementedError
 	return tuples
