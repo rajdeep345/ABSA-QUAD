@@ -87,7 +87,8 @@ def extract_spans_para(task, target_mode, seq, seq_type):
 				# reason for not taking vaccine is {unnecessary} because {Covid cases are mild/assymptomatic}
 				if s.startswith('reason for not taking vaccine is'):
 					reason = s.strip().split()[6]
-					reason = 'none' if reason == 'none' or reason == 'not'
+					if reason == 'none' or reason == 'not':
+						reason = 'none'
 					if reason == 'none':
 						expln = ''
 					else:
