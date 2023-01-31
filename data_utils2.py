@@ -60,7 +60,7 @@ def read_line_examples_from_file(data_path, data_type, task):
 				labels.append(tuples)
 	elif task == 'hateXplain':
 		df = pd.read_csv (f'{data_path}/{data_type}.csv')
-		for row in df.rows():
+		for index, row in df.iterrows():
 			sents.append(row['text'].strip().split())
 			if row['label'].strip() == 'normal':
 				labels.append([row['label'].strip(), ''])
