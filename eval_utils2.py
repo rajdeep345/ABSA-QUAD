@@ -110,8 +110,8 @@ def extract_spans_para(task, target_mode, seq, seq_type):
 						expln = ' '.join(s.strip().split()[6:])			
 				else:
 					print(f'Cannot decode: {s}')
-					reason, expln = '', ''
-				tuples.append((reason, expln))
+					op, expln = '', ''
+				tuples.append((op, expln))
 	else:
 		raise NotImplementedError
 	return tuples
