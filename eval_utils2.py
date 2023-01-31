@@ -3,7 +3,6 @@
 # This script handles the decoding functions and performance measurement
 
 import re
-from data_utils2 import aspect_cate_list
 
 sentiment_word_list = ['positive', 'negative', 'neutral']
 opinion2word = {'great': 'positive', 'bad': 'negative', 'ok': 'neutral'}
@@ -88,10 +87,26 @@ def extract_spans_para(task, target_mode, seq, seq_type):
 				# reason for not taking vaccine is {unnecessary} because {Covid cases are mild/assymptomatic}
 				if s.startswith('reason for not taking vaccine is'):
 					reason = s.strip().split()[6]
+					reason = 'none' if reason == 'none' or reason == 'not'
 					if reason == 'none':
 						expln = ''
 					else:
 						expln = ' '.join(s.strip().split()[8:])			
+				else:
+					print(f'Cannot decode: {s}')
+					reason, expln = '', ''
+				tuples.append((reason, expln))
+
+	elif task == 'hateXplain':
+		if target_mode == 'para':
+			for s in sents:
+				# the expressed stance is {hatespeech} because {disgusting kike language exterminate the goyim}
+				if s.startswith('the expressed stance is'):
+					op = s.strip().split()[4]
+					if op == 'normal':
+						expln = ''
+					else:
+						expln = ' '.join(s.strip().split()[6:])			
 				else:
 					print(f'Cannot decode: {s}')
 					reason, expln = '', ''

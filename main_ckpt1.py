@@ -37,7 +37,7 @@ def init_args():
 	parser = argparse.ArgumentParser()
 	# basic settings
 	parser.add_argument("--task", default='asqp', type=str, required=True,
-						help="The name of the task, selected from: [aste, asqp, acos, caves]")
+						help="The name of the task, selected from: [aste, asqp, acos, caves, hateXplain]")
 	parser.add_argument("--target_mode", default='para', type=str, required=True,
 						help="The mode in which the target is to be framed, selected from: [para, temp]")
 	parser.add_argument("--dataset", default='rest15', type=str, required=True,
@@ -334,7 +334,10 @@ if args.do_direct_eval:
 	# print("Reload the model")
 	# model.model.from_pretrained(args.output_dir)
 
-	data_path = f'data_{args.task}' if args.task == 'caves' else f'data_{args.task}/{args.dataset}'
+	if (args.task == 'caves' args.task == 'hateXplain'):
+		data_path = f'data_{args.task}' 
+	else :
+		data_path = f'data_{args.task}/{args.dataset}'
 	sents, _ = read_line_examples_from_file(data_path, 'test', args.task)
 
 	print()
@@ -374,7 +377,10 @@ if args.do_inference:
 
 	model = T5FineTuner(args, tfm_model, tokenizer)
 
-	data_path = f'data_{args.task}' if args.task == 'caves' else f'data_{args.task}/{args.dataset}'
+	if (args.task == 'caves' args.task == 'hateXplain'):
+		data_path = f'data_{args.task}' 
+	else :
+		data_path = f'data_{args.task}/{args.dataset}'
 	sents, _ = read_line_examples_from_file(data_path, 'test', args.task)
 
 	print()

@@ -9,4 +9,4 @@ python main_ckpt1.py --task caves \
             --gradient_accumulation_steps 1 \
             --eval_batch_size 16 \
             --learning_rate 3e-4 \
-            --num_train_epochs 1
+            --num_train_epochs 20 > caves_para.txt

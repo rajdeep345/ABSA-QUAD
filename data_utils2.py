@@ -4,26 +4,12 @@
 
 import random
 import json
+import pandas as pd
 from torch.utils.data import Dataset
 
 senttag2word = {'POS': 'positive', 'NEG': 'negative', 'NEU': 'neutral'}
 senttag2opinion = {'POS': 'great', 'NEG': 'bad', 'NEU': 'ok'}
 sentword2opinion = {'positive': 'great', 'negative': 'bad', 'neutral': 'ok'}
-
-aspect_cate_list = ['location general',
-					'food prices',
-					'food quality',
-					'food general',
-					'ambience general',
-					'service general',
-					'restaurant prices',
-					'drinks prices',
-					'restaurant miscellaneous',
-					'drinks quality',
-					'drinks style_options',
-					'restaurant general',
-					'food style_options']
-
 
 def read_line_examples_from_file(data_path, data_type, task):
 	"""
@@ -72,10 +58,31 @@ def read_line_examples_from_file(data_path, data_type, task):
 				for k,v in values['labels'].items():
 					tuples.append([k, v[0]['terms'].strip()])
 				labels.append(tuples)
+	elif task == 'hateXplain':
+		df = pd.read_csv (f'{data_path}/{data_type}.csv')
+		for row in df.rows():
+			sents.append(row['text'].strip().split())
+			if row['label'].strip() == 'normal':
+				labels.append([row['label'].strip(), ''])
+			else:
+				labels.append([row['label'].strip(), row['keyword'].strip()])
 
 	assert len(sents) == len(labels)	
 	print(f"Total examples = {len(sents)}")
 	return sents, labels
+
+
+def get_para_hateXplain_targets(sents, labels, target_mode):
+	targets = []
+	for label in labels:
+		reason, explanation = label
+		if target_mode == 'para':
+			if reason == 'normal':
+				target = f"the expressed stance is normal"
+			else:
+				target = f"the expressed stance is {reason} because {explanation}"
+		targets.append(target)
+	return targets
 
 
 def get_para_caves_targets(sents, labels, target_mode):
@@ -171,6 +178,8 @@ def get_transformed_io(data_path, data_type, task, target_mode):
 		targets = get_para_asqp_targets(sents, labels, target_mode)
 	elif task == 'caves':
 		targets = get_para_caves_targets(sents, labels, target_mode)
+	elif task == 'hateXplain':
+		targets = get_para_hateXplain_targets(sents, labels, target_mode)
 	else:
 		raise NotImplementedError
 
@@ -179,7 +188,10 @@ def get_transformed_io(data_path, data_type, task, target_mode):
 
 class ABSADataset(Dataset):
 	def __init__(self, tokenizer, data_dir, data_type, task, target_mode, max_len=128):
-		self.data_path = f'data_{task}' if task == 'caves' else f'data_{task}/{data_dir}'
+		if task == 'caves' or task == 'hateXplain':
+			self.data_path = f'data_{task}' 
+		else:
+			self.data_path = f'data_{task}/{data_dir}'
 		self.data_type = data_type
 		self.task = task
 		self.target_mode = target_mode
