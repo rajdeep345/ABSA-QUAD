@@ -1,6 +1,6 @@
-python main_ckpt1.py --task caves \
+python main_ckpt1.py --task hateXplain \
             --target_mode para \
-            --dataset caves \
+            --dataset hateXplain \
             --model_name_or_path t5-base \
             --n_gpu 0 \
             --do_train \
@@ -9,4 +9,4 @@ python main_ckpt1.py --task caves \
             --gradient_accumulation_steps 1 \
             --eval_batch_size 16 \
             --learning_rate 3e-4 \
-            --num_train_epochs 10 > caves_para.txt
+            --num_train_epochs 10 > hateXplain_para.txt
