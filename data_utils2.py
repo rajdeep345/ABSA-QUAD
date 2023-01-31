@@ -65,7 +65,7 @@ def read_line_examples_from_file(data_path, data_type, task):
 			if row['label'].strip() == 'normal':
 				labels.append([row['label'].strip(), ''])
 			else:
-				labels.append([row['label'].strip(), row['keyword'].strip()])
+				labels.append([row['label'].strip(), str(row['keyword']).strip()])
 
 	assert len(sents) == len(labels)	
 	print(f"Total examples = {len(sents)}")
